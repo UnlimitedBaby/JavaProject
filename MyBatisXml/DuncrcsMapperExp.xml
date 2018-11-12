@@ -1,0 +1,112 @@
+
+	<insert id="saveDuncrcs" parameterType="com.XXXX.model.Duncrcs" >
+	  	<selectKey keyProperty="dunno" order="BEFORE" resultType="String">
+	  		select DUNNO_SEQ.nextval from dual
+	  	</selectKey>
+	    insert into DUNCRCS
+	    <trim prefix="(" suffix=")" suffixOverrides="," >
+	      LOANACNO,CSTID,RSKTP,DUNNO,DUNDT,DUNPSNL,DUNFSHN,DUNRSLT,CRTTM,LASTMODTLR,LASTMODTM,
+	    </trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides="," >
+	      	#{loanacno,jdbcType=VARCHAR},
+			#{cstid,jdbcType=VARCHAR},
+			#{rsktp,jdbcType=VARCHAR},
+			#{dunno,jdbcType=VARCHAR},
+			#{dundt,jdbcType=VARCHAR},
+			#{dunpsnl,jdbcType=VARCHAR},
+			#{dunfshn,jdbcType=VARCHAR},
+			#{dunrslt,jdbcType=VARCHAR},
+			#{crttm,jdbcType=TIMESTAMP},
+			#{lastmodtlr,jdbcType=VARCHAR},
+			#{lastmodtm,jdbcType=TIMESTAMP},
+	    </trim>
+	  </insert>
+
+	<update id="updateDuncrcsList" parameterType="java.util.List">
+		update DUNCRCS
+		<trim prefix="set" suffixOverrides="," >
+			<trim prefix="DUNDT=case" suffix="end," >
+				<foreach collection="list" item="item" index="index">
+					<if test="item.dundt==null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then ''
+					</if>
+					<if test="item.dundt!=null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then #{item.dundt}
+					</if>
+				</foreach>
+			</trim>
+			<trim prefix="DUNPSNL=case" suffix="end," >
+				<foreach collection="list" item="item" index="index">
+					<if test="item.dunpsnl==null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then ''
+					</if>
+					<if test="item.dunpsnl!=null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then #{item.dunpsnl}
+					</if>
+				</foreach>
+			</trim>
+			<trim prefix="DUNFSHN=case" suffix="end," >
+				<foreach collection="list" item="item" index="index">
+					<if test="item.dunfshn!=null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then #{item.dunfshn}
+					</if>
+				</foreach>
+			</trim>
+			<trim prefix="DUNRSLT=case" suffix="end," >
+				<foreach collection="list" item="item" index="index">
+					<if test="item.dunrslt==null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then ''
+					</if>
+					<if test="item.dunrslt!=null">
+						when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then #{item.dunrslt}
+					</if>
+				</foreach>
+			</trim>
+			<trim prefix="LASTMODTLR=case" suffix="end," >
+				when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then #{item.lastmodtlr}
+			</trim>
+			<trim prefix="LASTMODTM=case" suffix="end," >
+				when (LOANACNO = #{item.loanacno} and CSTID=#{item.cstid} and RSKTP = #{item.rsktp} and DUNNO = #{item.dunno}) then #{item.lastmodtm}
+			</trim>
+		</trim>
+		where
+		<foreach collection="list" item="item" index="index" separator="or">
+				LOANACNO = #{item.loanacno}
+				and CSTID = #{item.cstid}
+				and RSKTP = #{item.rsktp}
+				and DUNNO = #{item.dunno}
+		</foreach>
+	</update>
+
+	<insert id="addDuncrcsListHaveHist"  parameterType="com.XXXX.model.Hirskcstinf" >
+    MERGE INTO DUNCRCS TARGET USING (
+    SELECT
+		dunst.CSTID, dunst.DUNNO, dunst.LOANACNO, dunst.RSKTP, dunst.DUNDT, dunst.DUNPSNL,
+		dunst.DUNFSHN, dunst.DUNRSLT, #{crttm,jdbcType=TIMESTAMP} AS CRTTM,
+		#{lastmodtlr,jdbcType=VARCHAR} AS LASTMODTLR, #{lastmodtm,jdbcType=TIMESTAMP} AS LASTMODTM
+	FROM
+		LOANINF liaq
+	INNER JOIN HIRSKLOANCRCS crcs
+		ON liaq.CSTID = crcs.CSTID AND liaq.LOANACNO = crcs.LOANACNO AND crcs.RSKTP = #{rsktp,jdbcType=VARCHAR}
+	INNER JOIN DUNCRCSHIST dunst
+		ON crcs.CSTID = dunst.CSTID AND crcs.LOANACNO = dunst.LOANACNO AND dunst.RSKTP = #{rsktp,jdbcType=VARCHAR}
+  	WHERE
+  		liaq.CSTID = #{cstid,jdbcType=VARCHAR}
+  		AND liaq.LOANBAL&gt;0
+  	) SOURCE
+    ON (TARGET.CSTID = SOURCE.CSTID AND TARGET.LOANACNO = SOURCE.LOANACNO AND TARGET.DUNNO = SOURCE.DUNNO AND TARGET.RSKTP = SOURCE.RSKTP)
+	WHEN NOT MATCHED THEN INSERT(
+		TARGET.CSTID, TARGET.DUNNO, TARGET.LOANACNO, TARGET.RSKTP, TARGET.DUNDT, TARGET.DUNPSNL,
+		TARGET.DUNFSHN, TARGET.DUNRSLT, TARGET.CRTTM, TARGET.LASTMODTLR, TARGET.LASTMODTM
+	)
+	VALUES(
+		SOURCE.CSTID, SOURCE.DUNNO, SOURCE.LOANACNO, SOURCE.RSKTP, SOURCE.DUNDT, SOURCE.DUNPSNL,
+		SOURCE.DUNFSHN, SOURCE.DUNRSLT, SOURCE.CRTTM, SOURCE.LASTMODTLR, SOURCE.LASTMODTM
+	)
+  </insert>
+
+	<insert id="insertDuncrcshist" >
+      INSERT INTO DUNCRCSHIST(CSTID, DUNNO, LOANACNO, RSKTP, DUNDT, DUNPSNL, DUNFSHN, DUNRSLT, CRTTM, LASTMODTLR, LASTMODTM)
+			SELECT dun.CSTID, dun.DUNNO, dun.LOANACNO, dun.RSKTP, dun.DUNDT, dun.DUNPSNL, dun.DUNFSHN, dun.DUNRSLT, dun.CRTTM, dun.LASTMODTLR, dun.LASTMODTM
+				FROM DUNCRCS dun WHERE dun.CSTID=#{0} AND dun.RSKTP=#{1}
+  </insert>

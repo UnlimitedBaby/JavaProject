@@ -1,0 +1,357 @@
+
+<sql id="Base_Column_List" >
+    CSTID, LOANACNO, RSKTP, COLLECTSTRTY, IFRSKDEFUSELOAN, RSKDEFUSEACDLWTHDT, RSKDEFUSEMAT,
+    RSKDEFUSETM, CASEAGENTFSHN, FRSTTRAILCOURTSESSIONDT, TWOTRAILCOURTSESSIONDT, JUDGMENTDOCNO,
+    EXECRULINGCASENO, APLEXECTM, SUSPENDRULINGTM, ENDRULINGTM, IFEXECEND, AUCTEVALUATINGPRICE,
+    COLLIMPLEMENTATIONSUM, FSTRESPEREHRNO, SCDYRESPEREHRNO, THDRESPEREHRNO, IFSETRESPER,
+    HIRSKTPLOAN, EXPECTMOVEDT, EXPECTRCLMDT, EXPECTRCLMSUM, CHRGOFDT, FSTRESPERNAME,
+    SCDYRESPERNAME, THDRESPERNAME, IFLAWDUN, LWSTPROGRESS, CRTTM, LASTMODTLR, LASTMODTM,
+    RCLMDT, RCLMSUM, RCRDDT, RECEIVINGMSR, PROGRESSCRCS
+  </sql>
+	<update id="updateRespers" parameterType="com.XXXX.vo.HirskcstinfVo">
+		begin
+	   <foreach collection="hirskloancrcsExps" item="item" index="index" separator=";">
+	   		update HIRSKLOANCRCS
+	   		<set>
+	   			<if test="hirskloancrcs.fstresperehrno!=null and hirskloancrcs.fstresperehrno!='' and hirskloancrcs.fstrespername!=null and hirskloancrcs.fstrespername!=''">
+	   				FSTRESPEREHRNO = #{hirskloancrcs.fstresperehrno,jdbcType=VARCHAR},
+	   				FSTRESPERNAME = #{hirskloancrcs.fstrespername,jdbcType=VARCHAR},
+		        </if>
+	   			<if test="hirskloancrcs.scdyresperehrno!=null and hirskloancrcs.scdyresperehrno!='' and hirskloancrcs.scdyrespername!=null and hirskloancrcs.scdyrespername!=''">
+	   				SCDYRESPEREHRNO = #{hirskloancrcs.scdyresperehrno,jdbcType=VARCHAR},
+	   				SCDYRESPERNAME = #{hirskloancrcs.scdyrespername,jdbcType=VARCHAR},
+		        </if>
+	   			<if test="hirskloancrcs.thdresperehrno!=null and hirskloancrcs.thdresperehrno!='' and hirskloancrcs.thdrespername!=null and hirskloancrcs.thdrespername!=''">
+	   				THDRESPEREHRNO = #{hirskloancrcs.thdresperehrno,jdbcType=VARCHAR},
+	   				THDRESPERNAME = #{hirskloancrcs.thdrespername,jdbcType=VARCHAR},
+		        </if>
+	   			LASTMODTLR = #{q_lastmodtlr,jdbcType=VARCHAR},
+	   			LASTMODTM = #{q_lastmodtm,jdbcType=TIMESTAMP},
+	   		</set>
+	   		<where>
+	   			CSTID = #{item.cstid,jdbcType=VARCHAR}
+	   			and LOANACNO = #{item.loanacno,jdbcType=VARCHAR}
+	   			and RSKTP = #{item.rsktp,jdbcType=VARCHAR}
+	   		</where>
+	    </foreach>
+	    ;end;
+	</update>
+
+	<update id="deleteRepeatRespers" parameterType="com.XXXX.vo.HirskcstinfVo">
+		begin
+	   <foreach collection="hirskloancrcsExps" item="item" index="index" separator=";">
+	   		update HIRSKLOANCRCS
+	   		<set>
+	   			SCDYRESPEREHRNO = (CASE WHEN FSTRESPEREHRNO = SCDYRESPEREHRNO THEN '' ELSE SCDYRESPEREHRNO END),
+	   			SCDYRESPERNAME = (CASE WHEN FSTRESPERNAME = SCDYRESPERNAME THEN '' ELSE SCDYRESPERNAME END),
+	   			THDRESPEREHRNO = (CASE WHEN FSTRESPEREHRNO = THDRESPEREHRNO OR SCDYRESPEREHRNO = THDRESPEREHRNO THEN '' ELSE THDRESPEREHRNO END),
+	   			THDRESPERNAME = (CASE WHEN FSTRESPERNAME = THDRESPERNAME OR SCDYRESPERNAME = THDRESPERNAME THEN '' ELSE THDRESPERNAME END),
+	   			IFSETRESPER = (
+ 					CASE WHEN
+		   				FSTRESPEREHRNO IS NOT NULL
+		   				OR SCDYRESPEREHRNO IS NOT NULL
+		   				OR THDRESPEREHRNO IS NOT NULL
+		   				OR FSTRESPERNAME IS NOT NULL
+		   				OR SCDYRESPERNAME IS NOT NULL
+		   				OR THDRESPERNAME IS NOT NULL
+		   			THEN '1'
+	   				ELSE '0'
+				END),
+	   		</set>
+	   		<where>
+	   			CSTID = #{item.cstid,jdbcType=VARCHAR}
+	   			and LOANACNO = #{item.loanacno,jdbcType=VARCHAR}
+	   			and RSKTP = #{item.rsktp,jdbcType=VARCHAR}
+	   		</where>
+	    </foreach>
+	    ;end;
+	</update>
+
+  <insert id="addByLoaninfList"  parameterType="java.util.List" >
+        insert into HIRSKLOANCRCS(CSTID,LOANACNO,RSKTP,IFLAWDUN,IFRSKDEFUSELOAN,FSTRESPERNAME,FSTRESPEREHRNO,CRTTM,LASTMODTLR,LASTMODTM)
+        select t.CSTID,t.LOANACNO,t.RSKTP,t.IFLAWDUN,t.IFRSKDEFUSELOAN,t.FSTRESPERNAME,t.FSTRESPEREHRNO,t.CRTTM,t.LASTMODTLR,t.LASTMODTM from
+    <foreach collection="list" item="item" index="index" open="(" close=")t" separator="union all">
+       SELECT
+       		#{item.cstid} as CSTID
+       		,#{item.loanacno} as LOANACNO
+       		,#{item.rsktp} as RSKTP
+       		,#{item.iflawdun} as IFLAWDUN
+       		,#{item.ifrskdefuseloan} as IFRSKDEFUSELOAN
+       		,#{item.fstrespername} as FSTRESPERNAME
+       		,#{item.fstresperehrno} as FSTRESPEREHRNO
+       		,#{item.crttm} as CRTTM
+       		,#{item.lastmodtlr} as LASTMODTLR
+       		,#{item.lastmodtm} as LASTMODTM
+       FROM dual
+    </foreach>
+  </insert>
+
+  <insert id="addHirskloancrcsList"  parameterType="com.XXXX.model.Hirskloancrcs" >
+    INSERT INTO HIRSKLOANCRCS TARGET(
+		TARGET.CSTID, TARGET.LOANACNO, TARGET.RSKTP, TARGET.COLLECTSTRTY, TARGET.IFRSKDEFUSELOAN, TARGET.RSKDEFUSEACDLWTHDT, TARGET.RSKDEFUSEMAT,
+	    TARGET.RSKDEFUSETM, TARGET.CASEAGENTFSHN, TARGET.FRSTTRAILCOURTSESSIONDT, TARGET.TWOTRAILCOURTSESSIONDT, TARGET.JUDGMENTDOCNO,
+	    TARGET.EXECRULINGCASENO, TARGET.APLEXECTM, TARGET.SUSPENDRULINGTM, TARGET.ENDRULINGTM, TARGET.IFEXECEND, TARGET.AUCTEVALUATINGPRICE,
+	    TARGET.COLLIMPLEMENTATIONSUM, TARGET.FSTRESPEREHRNO, TARGET.SCDYRESPEREHRNO, TARGET.THDRESPEREHRNO, TARGET.IFSETRESPER,
+	    TARGET.HIRSKTPLOAN, TARGET.EXPECTMOVEDT, TARGET.EXPECTRCLMDT, TARGET.EXPECTRCLMSUM, TARGET.CHRGOFDT, TARGET.FSTRESPERNAME,
+	    TARGET.SCDYRESPERNAME, TARGET.THDRESPERNAME, TARGET.IFLAWDUN, TARGET.LWSTPROGRESS, TARGET.CRTTM, TARGET.LASTMODTLR, TARGET.LASTMODTM,
+	    TARGET.RCLMDT, TARGET.RCLMSUM, TARGET.RCRDDT, TARGET.RECEIVINGMSR, TARGET.PROGRESSCRCS
+    )
+	SELECT
+		CASE WHEN hist.CSTID IS NULL THEN #{cstid,jdbcType=VARCHAR} ELSE hist.CSTID END AS CSTID,
+		liaq.LOANACNO,
+		CASE WHEN hist.RSKTP IS NULL THEN #{rsktp,jdbcType=VARCHAR} ELSE hist.RSKTP END AS RSKTP,
+		hist.COLLECTSTRTY,
+		CASE WHEN hist.IFRSKDEFUSELOAN IS NULL THEN #{ifrskdefuseloan,jdbcType=VARCHAR} ELSE hist.IFRSKDEFUSELOAN END AS IFRSKDEFUSELOAN,
+		hist.RSKDEFUSEACDLWTHDT, hist.RSKDEFUSEMAT, hist.RSKDEFUSETM, hist.CASEAGENTFSHN, hist.FRSTTRAILCOURTSESSIONDT,
+		hist.TWOTRAILCOURTSESSIONDT, hist.JUDGMENTDOCNO, hist.EXECRULINGCASENO, hist.APLEXECTM, hist.SUSPENDRULINGTM,
+		hist.ENDRULINGTM, hist.IFEXECEND, hist.AUCTEVALUATINGPRICE, hist.COLLIMPLEMENTATIONSUM,
+    	hist.FSTRESPEREHRNO, hist.SCDYRESPEREHRNO, hist.THDRESPEREHRNO, hist.IFSETRESPER,
+    	hist.HIRSKTPLOAN, hist.EXPECTMOVEDT, hist.EXPECTRCLMDT, hist.EXPECTRCLMSUM, hist.CHRGOFDT,
+    	hist.FSTRESPERNAME, hist.SCDYRESPERNAME, hist.THDRESPERNAME,
+    	CASE WHEN hist.IFLAWDUN IS NULL THEN #{iflawdun,jdbcType=VARCHAR} ELSE hist.IFLAWDUN END AS IFLAWDUN,
+    	hist.LWSTPROGRESS, #{crttm,jdbcType=TIMESTAMP} AS CRTTM,
+    	#{lastmodtlr,jdbcType=VARCHAR} AS LASTMODTLR, #{lastmodtm,jdbcType=TIMESTAMP} AS LASTMODTM,
+    	hist.RCLMDT, hist.RCLMSUM, hist.RCRDDT, hist.RECEIVINGMSR, hist.PROGRESSCRCS
+	FROM
+		LOANINF liaq
+	LEFT JOIN
+		HIRSKLOANCRCS crcs
+		ON liaq.CSTID = crcs.CSTID AND liaq.LOANACNO = crcs.LOANACNO
+	LEFT JOIN HIRSKLOANCRCSHIST hist
+		ON liaq.CSTID = hist.CSTID AND liaq.LOANACNO = hist.LOANACNO AND hist.RSKTP = #{rsktp,jdbcType=VARCHAR}
+  	WHERE
+  		liaq.CSTID = #{cstid,jdbcType=VARCHAR}
+  		AND liaq.LOANBAL&gt;0
+  		AND crcs.RSKTP IS NULL
+  </insert>
+
+  <insert id="insertHirskloancrcshist" >
+  MERGE INTO HIRSKLOANCRCSHIST TARGET USING (
+  	SELECT
+		<include refid="Base_Column_List" />
+		FROM HIRSKLOANCRCS WHERE CSTID=#{0} AND RSKTP=#{1}
+  ) SOURCE
+        ON (TARGET.CSTID=SOURCE.CSTID AND TARGET.LOANACNO=SOURCE.LOANACNO AND TARGET.RSKTP=SOURCE.RSKTP)
+        WHEN NOT MATCHED THEN INSERT(
+	        TARGET.CSTID, TARGET.LOANACNO, TARGET.RSKTP, TARGET.COLLECTSTRTY, TARGET.IFRSKDEFUSELOAN, TARGET.RSKDEFUSEACDLWTHDT, TARGET.RSKDEFUSEMAT,
+		    TARGET.RSKDEFUSETM, TARGET.CASEAGENTFSHN, TARGET.FRSTTRAILCOURTSESSIONDT, TARGET.TWOTRAILCOURTSESSIONDT, TARGET.JUDGMENTDOCNO,
+		    TARGET.EXECRULINGCASENO, TARGET.APLEXECTM, TARGET.SUSPENDRULINGTM, TARGET.ENDRULINGTM, TARGET.IFEXECEND, TARGET.AUCTEVALUATINGPRICE,
+		    TARGET.COLLIMPLEMENTATIONSUM, TARGET.FSTRESPEREHRNO, TARGET.SCDYRESPEREHRNO, TARGET.THDRESPEREHRNO, TARGET.IFSETRESPER,
+		    TARGET.HIRSKTPLOAN, TARGET.EXPECTMOVEDT, TARGET.EXPECTRCLMDT, TARGET.EXPECTRCLMSUM, TARGET.CHRGOFDT, TARGET.FSTRESPERNAME,
+		    TARGET.SCDYRESPERNAME, TARGET.THDRESPERNAME, TARGET.IFLAWDUN, TARGET.LWSTPROGRESS, TARGET.CRTTM, TARGET.LASTMODTLR, TARGET.LASTMODTM,
+		    TARGET.RCLMDT, TARGET.RCLMSUM, TARGET.RCRDDT, TARGET.RECEIVINGMSR, TARGET.PROGRESSCRCS
+            )
+        VALUES(
+            SOURCE.CSTID, SOURCE.LOANACNO, SOURCE.RSKTP, SOURCE.COLLECTSTRTY, SOURCE.IFRSKDEFUSELOAN, SOURCE.RSKDEFUSEACDLWTHDT, SOURCE.RSKDEFUSEMAT,
+		    SOURCE.RSKDEFUSETM, SOURCE.CASEAGENTFSHN, SOURCE.FRSTTRAILCOURTSESSIONDT, SOURCE.TWOTRAILCOURTSESSIONDT, SOURCE.JUDGMENTDOCNO,
+		    SOURCE.EXECRULINGCASENO, SOURCE.APLEXECTM, SOURCE.SUSPENDRULINGTM, SOURCE.ENDRULINGTM, SOURCE.IFEXECEND, SOURCE.AUCTEVALUATINGPRICE,
+		    SOURCE.COLLIMPLEMENTATIONSUM, SOURCE.FSTRESPEREHRNO, SOURCE.SCDYRESPEREHRNO, SOURCE.THDRESPEREHRNO, SOURCE.IFSETRESPER,
+		    SOURCE.HIRSKTPLOAN, SOURCE.EXPECTMOVEDT, SOURCE.EXPECTRCLMDT, SOURCE.EXPECTRCLMSUM, SOURCE.CHRGOFDT, SOURCE.FSTRESPERNAME,
+		    SOURCE.SCDYRESPERNAME, SOURCE.THDRESPERNAME, SOURCE.IFLAWDUN, SOURCE.LWSTPROGRESS, SOURCE.CRTTM, SOURCE.LASTMODTLR, SOURCE.LASTMODTM,
+		    SOURCE.RCLMDT, SOURCE.RCLMSUM, SOURCE.RCRDDT, SOURCE.RECEIVINGMSR, SOURCE.PROGRESSCRCS
+           )
+        WHEN MATCHED THEN UPDATE SET
+			TARGET.COLLECTSTRTY = SOURCE.COLLECTSTRTY,TARGET.IFRSKDEFUSELOAN = SOURCE.IFRSKDEFUSELOAN,TARGET.RSKDEFUSEACDLWTHDT = SOURCE.RSKDEFUSEACDLWTHDT,TARGET.RSKDEFUSEMAT = SOURCE.RSKDEFUSEMAT,TARGET.RSKDEFUSETM = SOURCE.RSKDEFUSETM,
+			TARGET.CASEAGENTFSHN = SOURCE.CASEAGENTFSHN,TARGET.FRSTTRAILCOURTSESSIONDT = SOURCE.FRSTTRAILCOURTSESSIONDT,TARGET.TWOTRAILCOURTSESSIONDT = SOURCE.TWOTRAILCOURTSESSIONDT,TARGET.JUDGMENTDOCNO = SOURCE.JUDGMENTDOCNO,
+			TARGET.EXECRULINGCASENO = SOURCE.EXECRULINGCASENO,TARGET.APLEXECTM = SOURCE.APLEXECTM,TARGET.SUSPENDRULINGTM = SOURCE.SUSPENDRULINGTM,TARGET.ENDRULINGTM = SOURCE.ENDRULINGTM,TARGET.IFEXECEND = SOURCE.IFEXECEND,
+			TARGET.AUCTEVALUATINGPRICE = SOURCE.AUCTEVALUATINGPRICE,TARGET.COLLIMPLEMENTATIONSUM = SOURCE.COLLIMPLEMENTATIONSUM,TARGET.FSTRESPEREHRNO = SOURCE.FSTRESPEREHRNO,
+			TARGET.SCDYRESPEREHRNO = SOURCE.SCDYRESPEREHRNO,TARGET.THDRESPEREHRNO = SOURCE.THDRESPEREHRNO,TARGET.IFSETRESPER = SOURCE.IFSETRESPER,TARGET.HIRSKTPLOAN = SOURCE.HIRSKTPLOAN,TARGET.EXPECTMOVEDT = SOURCE.EXPECTMOVEDT,
+			TARGET.EXPECTRCLMDT = SOURCE.EXPECTRCLMDT,TARGET.EXPECTRCLMSUM = SOURCE.EXPECTRCLMSUM,TARGET.CHRGOFDT = SOURCE.CHRGOFDT,TARGET.FSTRESPERNAME = SOURCE.FSTRESPERNAME,TARGET.SCDYRESPERNAME = SOURCE.SCDYRESPERNAME,
+			TARGET.THDRESPERNAME = SOURCE.THDRESPERNAME,TARGET.IFLAWDUN = SOURCE.IFLAWDUN,TARGET.LWSTPROGRESS = SOURCE.LWSTPROGRESS,TARGET.LASTMODTLR = SOURCE.LASTMODTLR,
+			TARGET.LASTMODTM = SOURCE.LASTMODTM,TARGET.RCLMDT = SOURCE.RCLMDT,TARGET.RCLMSUM = SOURCE.RCLMSUM,TARGET.RCRDDT = SOURCE.RCRDDT,TARGET.RECEIVINGMSR = SOURCE.RECEIVINGMSR,TARGET.PROGRESSCRCS = SOURCE.PROGRESSCRCS
+  </insert>
+
+	<sql id="LoancrcsExp_Column_List" >
+	    loa.SQCID,loa.CSTNAME,loa.CSTID,loa.LOANACNO,loa.CTFNO,loa.ORGID,rcs.RSKTP,rcs.HIRSKTPLOAN,rcs.LWSTPROGRESS,
+	    loa.LVL5CLSS,loa.LOANBAL,loa.DEPSUM,loa.PDCODE,loa.LOANSUM,rcs.FSTRESPERNAME,rcs.SCDYRESPERNAME,rcs.THDRESPERNAME,
+	    rcs.FSTRESPEREHRNO,rcs.SCDYRESPEREHRNO,rcs.THDRESPEREHRNO,rcs.LASTMODTM
+	</sql>
+
+	<select id="selectByExampleAndPage" fetchSize="256" resultType="HashMap" parameterType="com.XXXX.vo.HirskcstinfVo" >
+	/*+USE_HASH(loa,orgTmp) INDEX(rcs HIRSKLOANCRCS_INDEX1) INDEX(loa LOANINF_INDEX6)*/
+    	select /*+USE_HASH(loa,orgTmp)*/
+	<include refid="LoancrcsExp_Column_List" />
+    	from HIRSKLOANCRCS rcs
+	            INNER JOIN LOANINF loa
+	                ON rcs.CSTID = loa.CSTID AND rcs.LOANACNO = loa.LOANACNO AND loa.LOANBAL &gt; 0
+        <if test="q_opnacorgid!=null and q_opnacorgid!=''">
+        		   inner join  (SELECT  *   FROM   ORG  START WITH ORGID = #{q_opnacorgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	 ON  loa.ORGID = orgTmp.ORGID
+        </if>
+	    where 1=1
+		 <if test="q_resperNo!=null and q_resperNo!=''">
+		    AND (rcs.FSTRESPEREHRNO ='${q_resperNo}' or rcs.SCDYRESPEREHRNO ='${q_resperNo}' or rcs.THDRESPEREHRNO ='${q_resperNo}')
+		 </if>
+	    <include refid="Hirskloancrcs_Column_List" />
+	</select>
+
+	<select id="selectDepsumByPage" fetchSize="256" resultType="HashMap" parameterType="com.XXXX.vo.HirskcstinfVo" >
+		SELECT
+			astq.CSTID,astq.LOANACNO,astq.LMTNO,astq.RSKTP,astq.PRJNO,astq.CTFNO,astq.ORGID,astq.SCDLVORGID,astq.LOANBAL,astq.LVL5CLSS,astq.OVRLASTAMT
+		FROM
+			ASTQUERYSTAT astq
+		<if test="q_opnacorgid!=null and q_opnacorgid!=''">
+	        INNER JOIN  (SELECT  *   FROM   ORG  START WITH ORGID = #{q_opnacorgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+		     	 ON  astq.ORGID = orgTmp.ORGID
+		</if>
+		<where>
+			<if test="q_cstid!=null and q_cstid!=''">
+			    AND astq.CSTID = #{q_cstid,jdbcType=VARCHAR}
+			</if>
+			<if test="q_ctfno!=null and q_ctfno!=''">
+				AND astq.CTFNO = #{q_ctfno,jdbcType=VARCHAR}
+			</if>
+			<if test="q_rsktp!=null and q_rsktp!=''">
+		        AND astq.RSKTP = #{q_rsktp,jdbcType=VARCHAR}
+			</if>
+			<if test="q_ovrlastamt!=null and q_ovrlastamt!=''">
+				 AND astq.OVRLASTAMT &gt;= #{q_ovrlastamt,jdbcType=VARCHAR}
+			</if>
+			AND astq.RSKTP &lt;&gt; '01'
+		</where>
+	</select>
+
+	<select id="selectPrimaryKeyByResper" resultType="HashMap" parameterType="com.XXXX.vo.HirskcstinfVo" >
+    	select /*+USE_HASH(loa,orgTmp)*/
+		    to_char(loa.CSTID)||'-'||to_char(loa.LOANACNO)||'-'||to_char(rcs.RSKTP)||'a' AS KEYCHAR
+    	from HIRSKLOANCRCS rcs
+	            INNER JOIN LOANINF loa
+	                ON loa.CSTID = rcs.CSTID AND loa.LOANACNO = rcs.LOANACNO
+	    <if test="q_beginFrstlndt!=null and q_beginFrstlndt!=''">
+             AND loa.FRSTLNDT &gt;=${q_beginFrstlndt}
+        </if>
+        <if test="q_endFrstlndt!=null and q_endFrstlndt!=''">
+             AND loa.FRSTLNDT &lt;=${q_endFrstlndt}
+        </if>
+        <if test="q_opnacorgid!=null and q_opnacorgid!=''">
+        		   inner join  (SELECT  *   FROM   ORG  START WITH ORGID = #{q_opnacorgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	 ON  loa.ORGID = orgTmp.ORGID
+        </if>
+	    where 1=1
+	    <include refid="Hirskloancrcs_Column_List" />
+		 <if test="q_resper=='01'">
+		 	AND (rcs.FSTRESPERNAME is not null AND rcs.FSTRESPEREHRNO is not null AND rcs.SCDYRESPERNAME is not null AND rcs.SCDYRESPEREHRNO is not null AND rcs.THDRESPERNAME is not null AND rcs.THDRESPEREHRNO is not null)
+		 </if>
+		 <if test="q_resper=='02'">
+        	AND rcs.FSTRESPERNAME is null AND rcs.FSTRESPEREHRNO is null AND rcs.SCDYRESPERNAME is null AND rcs.SCDYRESPEREHRNO is null AND rcs.THDRESPERNAME is null AND rcs.THDRESPEREHRNO is null
+		 </if>
+		 <if test="q_resper=='03'">
+        	AND rcs.FSTRESPERNAME is null AND rcs.FSTRESPEREHRNO is null
+		 </if>
+		 <if test="q_resper=='04'">
+        	AND rcs.SCDYRESPERNAME is null AND rcs.SCDYRESPEREHRNO is null
+		 </if>
+		 <if test="q_resper=='05'">
+            AND rcs.THDRESPERNAME is null AND rcs.THDRESPEREHRNO is null
+		 </if>
+	</select>
+
+	<select id="selectFilterResperPage" resultType="HashMap" parameterType="com.XXXX.vo.HirskcstinfVo" >
+    	select <!-- /*+USE_HASH(loa,orgTmp)*/ -->
+	<include refid="LoancrcsExp_Column_List" />
+    	from HIRSKLOANCRCS rcs
+	            INNER JOIN LOANINF loa
+	                ON loa.CSTID = rcs.CSTID AND loa.LOANACNO = rcs.LOANACNO AND loa.LOANBAL&gt;0
+		<if test="q_beginFrstlndt!=null and q_beginFrstlndt!=''">
+             AND loa.FRSTLNDT &gt;=${q_beginFrstlndt}
+        </if>
+        <if test="q_endFrstlndt!=null and q_endFrstlndt!=''">
+             AND loa.FRSTLNDT &lt;=${q_endFrstlndt}
+        </if>
+        <if test="q_opnacorgid!=null and q_opnacorgid!=''">
+        		   inner join  (SELECT  *   FROM   ORG  START WITH ORGID = #{q_opnacorgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	 ON  loa.ORGID = orgTmp.ORGID
+        </if>
+	    where 1=1
+	    <include refid="Hirskloancrcs_Column_List" />
+		 <if test="q_resper=='01'">
+		 	AND (rcs.FSTRESPERNAME is not null AND rcs.FSTRESPEREHRNO is not null AND rcs.SCDYRESPERNAME is not null AND rcs.SCDYRESPEREHRNO is not null AND rcs.THDRESPERNAME is not null AND rcs.THDRESPEREHRNO is not null)
+		 </if>
+		 <if test="q_resper=='02'">
+        	AND rcs.FSTRESPERNAME is null AND rcs.FSTRESPEREHRNO is null AND rcs.SCDYRESPERNAME is null AND rcs.SCDYRESPEREHRNO is null AND rcs.THDRESPERNAME is null AND rcs.THDRESPEREHRNO is null
+		 </if>
+		 <if test="q_resper=='03'">
+        	AND rcs.FSTRESPERNAME is null AND rcs.FSTRESPEREHRNO is null
+		 </if>
+		 <if test="q_resper=='04'">
+        	AND rcs.SCDYRESPERNAME is null AND rcs.SCDYRESPEREHRNO is null
+		 </if>
+		 <if test="q_resper=='05'">
+            AND rcs.THDRESPERNAME is null AND rcs.THDRESPEREHRNO is null
+		 </if>
+	</select>
+
+	<sql id="Hirskloancrcs_Column_List" >
+	    <if test="q_cstid!=null and q_cstid!=''">
+		    AND loa.CSTID = #{q_cstid,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_ctfno!=null and q_ctfno!=''">
+		    AND loa.CTFNO = #{q_ctfno,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_loanacno!=null and q_loanacno!=''">
+		    AND loa.LOANACNO = #{q_loanacno,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_pdcode!=null and q_pdcode!=''">
+		    AND loa.PDCODE = #{q_pdcode,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_hirsktploan!=null and q_hirsktploan!=''">
+		    AND rcs.HIRSKTPLOAN = #{q_hirsktploan,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_iflostin!=null and q_iflostin!=''">
+		    AND inf.IFLOSTIN = #{q_iflostin,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_lvl5clss!=null and q_lvl5clss!=''">
+		    AND loa.LVL5CLSS = #{q_lvl5clss,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_lwstprogress!=null and q_lwstprogress!=''">
+		    AND rcs.LWSTPROGRESS = #{q_lwstprogress,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_rsktp!=null and q_rsktp!=''">
+        	AND rcs.RSKTP = #{q_rsktp,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_moreThanLoanbal!=null and q_moreThanLoanbal!=''">
+		    AND loa.LOANBAL &gt;= #{q_moreThanLoanbal,jdbcType=VARCHAR}
+		 </if>
+		<if test="q_moreThanDepsum!=null and q_moreThanDepsum!=''">
+		    AND loa.DEPSUM &gt;= #{q_moreThanDepsum,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_beginOvdnbr!=null and q_beginOvdnbr!=''">
+		    AND loa.OVDNBR &gt;= #{q_beginOvdnbr,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_endOvdnbr!=null and q_endOvdnbr!=''">
+		    AND loa.OVDNBR &lt;= #{q_endOvdnbr,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_beginLoanbal!=null and q_beginLoanbal!=''">
+		    AND loa.LOANBAL &gt;= #{q_beginLoanbal,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_endLoanbal!=null and q_endLoanbal!=''">
+		    AND loa.LOANBAL &lt;= #{q_endLoanbal,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_beginExpectmovedt!=null and q_beginExpectmovedt!=''">
+		    AND rcs.EXPECTMOVEDT &gt;= #{q_beginExpectmovedt,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_beginExpectmovedt!=null and q_beginExpectmovedt!='' and q_endExpectmovedt!=null and q_endExpectmovedt!=''">
+		    AND rcs.EXPECTMOVEDT &lt;= #{q_endExpectmovedt,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_beginExpectrclmdt!=null and q_beginExpectrclmdt!=''">
+		    AND rcs.EXPECTRCLMDT &gt;= #{q_beginExpectrclmdt,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_endExpectrclmdt!=null and q_endExpectrclmdt!=''">
+		    AND rcs.EXPECTRCLMDT &lt;= #{q_endExpectrclmdt,jdbcType=VARCHAR}
+		 </if>
+
+		 <if test="q_beginCrttm!=null and q_beginCrttm!=''">
+		    AND to_char(rcs.CRTTM,'yyyyMMdd') &gt;= #{q_beginCrttm,jdbcType=VARCHAR}
+		 </if>
+		 <if test="q_endCrttm!=null and q_endCrttm!=''">
+		    AND to_char(rcs.CRTTM,'yyyyMMdd') &lt;= #{q_endCrttm,jdbcType=VARCHAR}
+		 </if>
+		<if test="(q_rsktp==null or q_rsktp=='') and (q_rsktpList!=null and q_rsktpList!='')">
+        	<foreach collection="q_rsktpList" item="q_rsktps" index="index" open="AND rcs.RSKTP in(" close=")" separator="," >
+				#{q_rsktps,jdbcType=VARCHAR}
+			</foreach>
+		 </if>
+		 <if test="q_cstnm!=null and q_cstnm!=''">
+		    AND loa.CSTNAME like '%'||#{q_cstnm,jdbcType=VARCHAR}||'%'
+		 </if>
+	</sql>

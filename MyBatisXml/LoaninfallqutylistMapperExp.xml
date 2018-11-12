@@ -1,0 +1,234 @@
+
+  <sql id="Base_Column_List" >
+	liaq.LOANACNO, liaq.PDCODE, liaq.LOANSUM, liaq.LOANBAL, liaq.LOANINTRATE, liaq.REPYMTFSHN, liaq.COLLACNO,
+	liaq.LVL5CLSS,
+	liaq.HDCFTLVL5, liaq.FRSTLNDT, liaq.MAT, liaq.CSTID, liaq.RELSQCID, liaq.SQCID, liaq.LMTNO, liaq.PRJID, liaq.CTRSUM, liaq.ORGID,
+	liaq.CTFTP, liaq.CTFNO, liaq.REPYMTACNO, liaq.CRNPDREPYMTTM, liaq.REPYMTACNOBAL, liaq.CRNPDREPYMTSUM,
+	liaq.CSTNAME,
+	liaq.PRJNAME, liaq.SCDLVORGID, liaq.THDPTYLMTID, liaq.THDPTYLMTNAME, liaq.LOANTMLMT, liaq.DEPSUM,
+	liaq.LOANEDMAGMVST,
+	liaq.LOANEDMAGINTOFSHN, liaq.BLDGNAME, liaq.OVDNBR, liaq.LNORG, liaq.LNSUM, liaq.CMGREHRNO, liaq.CMGRNAME,
+	liaq.MARG, liaq.REPYMTACBALDT, liaq.DSTANCEREPYMTNBR, liaq.OVDTM, nvl(liaq.OVDPNPSUM,0) as OVDPNPSUM,nvl(liaq.OVDINT,0) as OVDINT, liaq.CRTTM, liaq.LASTMODTLR,
+	liaq.LASTMODTM, liaq.PNTVINT, liaq.OVDFLAG
+	,liaq.LSTPRDREPYMTDT,liaq.NEXTPRDREPYMTDAY,liaq.CHRGOFSUM,liaq.CHRGOFDT
+  </sql>
+  <sql id="Cusinf_Colunm_List">
+  	ci.CTCTEL, ci.FAMILYTEL, ci.UNITTEL
+  </sql>
+
+  <select id="selectPepymtByIf" resultType="hashmap" parameterType="com.XXXX.vo.LoaninfallqutylistVo">
+
+  		SELECT
+  		<include refid="Base_Column_List" />,
+  		<include refid="Cusinf_Colunm_List" />,
+  		case when liaq.OVDFLAG = 'Y'
+  			 then liaq.OVDPNPSUM+liaq.PNTVINT+liaq.OVDINT
+  			 else OVDPNPSUM
+  		end as Q_OVDPNPSUM,
+  		case when liaq.REPYMTACNOBAL-liaq.CRNPDREPYMTSUM &lt; 0
+  			 then liaq.REPYMTACNOBAL-liaq.CRNPDREPYMTSUM
+  			 else liaq.MARG
+  		end as Q_MARG
+  		FROM LOANINF liaq
+  		LEFT JOIN CSTINF ci ON liaq.CSTID = ci.CSTID
+  		<if test="loaninfallqutylistExp.orgid!=null and loaninfallqutylistExp.orgid!=''">
+  				   	   inner join  (SELECT  *   FROM   ORG  START WITH ORGID = #{loaninfallqutylistExp.orgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	 ON  liaq.ORGID = orgTmp.ORGID
+  		</if>
+		WHERE 1 = 1
+		<if test="loaninfallqutylistExp.cstid!=null and loaninfallqutylistExp.cstid!=''">
+		AND liaq.CSTID = #{loaninfallqutylistExp.cstid,jdbcType=VARCHAR}
+		</if>
+		<if test="loaninfallqutylistExp.Loanacno!=null and loaninfallqutylistExp.Loanacno!=''">
+		AND liaq.LOANACNO = #{loaninfallqutylistExp.loanacno,jdbcType=VARCHAR}
+		</if>
+		<if test="q_beginDt!=null and q_beginDt!=''">
+		AND liaq.DSTANCEREPYMTNBR &gt;=#{q_beginDt,jdbcType=VARCHAR}
+		</if>
+		<if test="q_endDt!=null and q_endDt!=''">
+		AND liaq.DSTANCEREPYMTNBR &lt;=#{q_endDt,jdbcType=VARCHAR}
+		</if>
+		<if test="q_beginMarg!=null and q_beginMarg!=''">
+		AND liaq.MARG &gt;=#{q_beginMarg,jdbcType=VARCHAR}
+		</if>
+		<if test="q_endMarg!=null and q_endMarg!=''">
+		AND liaq.MARG &lt;=#{q_endMarg,jdbcType=VARCHAR}
+		</if>
+		<if test="q_beginMargPre!=null and q_beginMargPre!=''">
+		AND liaq.REPYMTACNOBAL-liaq.CRNPDREPYMTSUM  &gt;=#{q_beginMargPre,jdbcType=VARCHAR}
+		</if>
+		<if test="q_endMargPre!=null and q_endMargPre!=''">
+		AND liaq.REPYMTACNOBAL-liaq.CRNPDREPYMTSUM  &lt;=#{q_endMargPre,jdbcType=VARCHAR}
+		</if>
+		<if test="q_margGt0F!=null and q_margGt0F!=''">
+		AND liaq.MARG &gt; 0
+		</if>
+		<if test="q_margLt0F!=null and q_margLt0F!=''">
+		AND liaq.REPYMTACNOBAL-liaq.CRNPDREPYMTSUM  &lt; 0
+		</if>
+		<if test="q_beginOvdnbr!=null and q_beginOvdnbr!=''">
+		AND liaq.OVDFLAG = 'Y'
+		AND liaq.OVDNBR &gt;=#{q_beginOvdnbr,jdbcType=VARCHAR}
+		</if>
+		<if test="q_endOvdnbr!=null and q_endOvdnbr!=''">
+		AND liaq.OVDFLAG = 'Y'
+		AND liaq.OVDNBR &lt;=#{q_endOvdnbr,jdbcType=VARCHAR}
+		</if>
+		<if test="loaninfallqutylistExp.ovdflag!=null and loaninfallqutylistExp.ovdflag!=''">
+		AND liaq.OVDFLAG = #{loaninfallqutylistExp.ovdflag,jdbcType=VARCHAR}
+		</if>
+		<if test="loaninfallqutylistExp.pdcode!=null and loaninfallqutylistExp.pdcode!=''">
+		AND liaq.PDCODE = #{loaninfallqutylistExp.pdcode,jdbcType=VARCHAR}
+		</if>
+  </select>
+
+  <select id="selectByCstidHandwork" resultMap="BaseResultMap" parameterType="com.XXXX.vo.HirskcstinfVo">
+	SELECT
+		LOANACNO,PDCODE,LOANSUM,LOANBAL,LOANINTRATE,SQCID,ORGID,LVL5CLSS,CSTID,CSTNAME,LOANEDMAGINTOFSHN,LOANEDMAGMVST,FRSTLNDT
+	FROM(
+  		SELECT loan.LOANACNO,crcs.RSKTP,loan.PDCODE,loan.LOANSUM,loan.LOANBAL,loan.LOANINTRATE,loan.SQCID,loan.ORGID,loan.LVL5CLSS,loan.CSTID,loan.CSTNAME,loan.LOANEDMAGINTOFSHN,loan.LOANEDMAGMVST,loan.FRSTLNDT
+  		FROM LOANINF loan
+  		LEFT JOIN HIRSKLOANCRCS crcs ON loan.CSTID = crcs.CSTID AND loan.LOANACNO = crcs.LOANACNO
+  		<if test="q_opnacorgid!=null and q_opnacorgid!=''">
+  			inner join  (SELECT  *   FROM   ORG  START WITH ORGID = #{q_opnacorgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	ON  loan.ORGID = orgTmp.ORGID
+  		</if>
+		WHERE loan.LOANBAL&gt;0
+		<if test="q_cstid!=null and q_cstid!=''">
+			AND loan.CSTID = #{q_cstid,jdbcType=VARCHAR}
+		</if>
+		<if test="q_rsktp!=null and q_rsktp!=''">
+			 AND (crcs.RSKTP IS NULL OR crcs.RSKTP = #{q_rsktp,jdbcType=VARCHAR})
+		</if>
+		<if test="q_rsktp==null or q_rsktp==''">
+			 AND crcs.RSKTP IS NULL
+		</if>
+		<!--
+		AND loan.OVDFLAG = 'Y'
+		AND loan.OVDNBR&gt;=0 AND loan.OVDNBR&lt;31 AND loan.LOANBAL&gt;0
+		 -->
+		order by loan.LOANACNO DESC
+	)
+  </select>
+
+  <select id="selectPepymtByDefault" resultType="hashmap" parameterType="com.XXXX.vo.LoaninfallqutylistVo">
+
+  		SELECT
+  		<include refid="Base_Column_List" />,
+  		<include refid="Cusinf_Colunm_List" />
+  		FROM LOANINF liaq
+  		LEFT JOIN CSTINF ci ON liaq.CSTID = ci.CSTID
+  		<if test="loaninfallqutylistExp.orgid!=null and loaninfallqutylistExp.orgid!=''">
+  			 inner join  (SELECT  *   FROM   ORG  START WITH ORGID = #{loaninfallqutylistExp.orgid, jdbcType=VARCHAR} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	 ON liaq.ORGID = orgTmp.ORGID
+  		</if>
+		WHERE 1 = 1
+		<if test="loaninfallqutylistExp.ovdnbr!=null and loaninfallqutylistExp.ovdnbr!=''">
+		AND liaq.OVDFLAG = 'Y'
+		AND liaq.OVDNBR &gt;= #{loaninfallqutylistExp.ovdnbr,jdbcType=VARCHAR}
+		AND liaq.OVDNBR &lt;= 30
+		</if>
+		<if test="loaninfallqutylistExp.dstancerepymtnbr!=null and loaninfallqutylistExp.dstancerepymtnbr!=''">
+		AND liaq.DSTANCEREPYMTNBR &gt;= #{loaninfallqutylistExp.dstancerepymtnbr,jdbcType=VARCHAR}
+		</if>
+		<if test="loaninfallqutylistExp.loanbal!=null and loaninfallqutylistExp.loanbal!=''">
+		AND liaq.LOANBAL &gt;= #{loaninfallqutylistExp.loanbal,jdbcType=VARCHAR}
+		</if>
+		<if test="loaninfallqutylistExp.ovdflag!=null and loaninfallqutylistExp.ovdflag!=''">
+		AND liaq.OVDFLAG = #{loaninfallqutylistExp.ovdflag,jdbcType=VARCHAR}
+		</if>
+		order by LOANACNO ASC
+  </select>
+
+  <sql id="BaseByLoanacno_Column_List" >
+  	loan.LOANACNO,loan.CSTNAME,loan.LOANSUM,loan.LNSUM,loan.LOANBAL,loan.LVL5CLSS
+  </sql>
+
+  <select id="selectByloaninFull" resultMap="BaseResultMap" parameterType="com.XXXX.vo.VerfLoanAplCstInfoVo">
+  	select
+  	<include refid="BaseByLoanacno_Column_List"/>
+  		from RCRMS.PWNCRCS pw  inner join LOANINF loan  on (pw.LOANACNO = loan.LOANACNO or lpad(pw.LOANACNO,17,'0') = loan.LMTNO)
+  	 <where>
+  		<if test="q_cstId != null and q_cstId !=''">
+  			and pw.GRNTCSTID='${q_cstId}'
+  		</if>
+  		<if test="q_ctfNo != null and q_ctfNo !=''">
+  			and pw.CTFNO='${q_ctfNo}'
+  		</if>
+  		<if test="q_ovdpnpsumGt0F!=null and q_ovdpnpsumGt0F!='' and q_ovdpnpsumGt0F ==1">
+	    	AND loan.OVDPNPSUM+loan.PNTVINT+loan.OVDINT  &gt; 0
+	    </if>
+  		and loan.PDCODE NOT IN('MELA','PLCF','PLFB','PLGA','WLCF','WLUB')
+  	</where>
+  </select>
+
+  <select id="selectByCstId" resultMap="BaseResultMap">
+
+  		SELECT
+  			<include refid="Base_Column_List" />
+  		FROM LOANINF liaq
+  		LEFT JOIN HIRSKLOANCRCS hir ON liaq.LOANACNO = hir.LOANACNO AND liaq.CSTID = hir.CSTID
+  		<if test="#{1}!=null and #{1}!=''">
+  			 INNER JOIN  (SELECT  *   FROM   ORG  START WITH ORGID = #{1} CONNECT BY SPRRORGID = PRIOR ORGID) orgTmp
+	     	 ON liaq.ORGID = orgTmp.ORGID
+  		</if>
+		WHERE (hir.RSKTP=#{2} OR hir.RSKTP IS NULL)
+		<if test="#{0}!=null and #{0}!=''">
+			AND liaq.CSTID = #{0}
+		</if>
+		<!-- AND liaq.OVDFLAG = 'Y'
+		AND liaq.OVDNBR&gt;0 AND liaq.OVDNBR&lt;=90 AND liaq.LOANBAL&gt;0 -->
+		order by liaq.LOANACNO asc
+  </select>
+
+  <sql id="Conditional_Column_List" >
+		LOANACNO, PDCODE, LOANSUM, LOANBAL, LOANINTRATE, REPYMTFSHN, COLLACNO,LVL5CLSS,
+		HDCFTLVL5, FRSTLNDT, MAT, CSTID, RELSQCID, SQCID, LMTNO, PRJID, CTRSUM, ORGID,
+		CTFTP, CTFNO, REPYMTACNO, CRNPDREPYMTTM, REPYMTACNOBAL, CRNPDREPYMTSUM,CSTNAME,
+		PRJNAME, SCDLVORGID, THDPTYLMTID, THDPTYLMTNAME, LOANTMLMT, DEPSUM,LOANEDMAGMVST,
+		LOANEDMAGINTOFSHN, BLDGNAME, OVDNBR, LNORG, LNSUM, CMGREHRNO, CMGRNAME,
+		MARG, REPYMTACBALDT, DSTANCEREPYMTNBR, OVDTM, nvl(OVDPNPSUM,0) as OVDPNPSUM,nvl(OVDINT,0) as OVDINT, CRTTM, LASTMODTLR,
+		LASTMODTM, PNTVINT, OVDFLAG
+  </sql>
+
+  <select id="selectByCstIdConditional" resultMap="BaseResultMap">
+	SELECT
+		<include refid="Conditional_Column_List" />
+  	FROM(
+  		SELECT
+  			<include refid="Base_Column_List" />,hir.RSKTP
+  		FROM LOANINF liaq
+  		LEFT JOIN HIRSKLOANCRCS hir ON liaq.LOANACNO = hir.LOANACNO AND hir.RSKTP=#{1}
+  		WHERE liaq.CSTID=#{0}
+		AND liaq.OVDFLAG = 'Y'
+  		AND liaq.OVDNBR&gt;0
+  		AND liaq.OVDNBR&lt;=90
+  		AND liaq.LOANBAL&gt;0
+  	)
+  	WHERE RSKTP&lt;&gt;#{1} OR RSKTP IS NULL
+  </select>
+
+  <select id="findByCstId" resultMap="BaseResultMap">
+  	WITH TARGET AS (
+  	SELECT
+		DISTINCT loan.CSTID,loan.CSTNAME,loan.CTFNO
+	FROM
+		LOANINF loan
+	WHERE
+		loan.CSTID = #{0}
+	)
+
+	SELECT
+		s.CSTID,s.CSTNAME,s.CTFNO
+	FROM(
+		SELECT
+			ta1.CSTID,ta2.CSTNAME,ta3.CTFNO,ROW_NUMBER() OVER (PARTITION BY ta1.CSTID ORDER BY ta3.CTFNO ASC) AS group_idx
+		FROM
+			TARGET ta1
+			LEFT JOIN
+				TARGET ta2 ON ta1.CSTID = ta2.CSTID AND ta2.CSTNAME IS NOT NULL
+			LEFT JOIN
+				TARGET ta3 ON ta1.CSTID = ta3.CSTID AND ta3.CTFNO IS NOT NULL
+	)s
+	WHERE s.group_idx = 1
+  </select>
